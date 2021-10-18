@@ -10,7 +10,7 @@
   #include <ESPAsyncTCP.h>
   #include <FS.h>   
 #endif
-#include <.h>
+#include <ESPAsyncWebServer.h>
 #include <SPI.h>
 #include <RH_NRF24.h>
 #include <RF24.h>
@@ -39,7 +39,7 @@ const int analogInPin = A0;  // ESP8266 Analog Pin ADC0 =
 int sensorValue = 0;  // value read from the pot
 float temp=0;
 int red = 0; //red value 0-1023
-int grn = 0; //green
+int yel = 0; //yellow
 int blu = 0; //blue
 int duration; //blink duration
 int interval; //blink interval
@@ -82,7 +82,7 @@ void setup()
   if (!nrf24.init())
     Serial.println("init failed");
   // Defaults after init are 2.402 GHz (channel 2), 2Mbps, 0dBm
-  if (!nrf24.setChannel(50))
+  if (!nrf24.setChannel(100))
     Serial.println("setChannel failed");
   if (!nrf24.setRF(RH_NRF24::DataRate250kbps, RH_NRF24::TransmitPower0dBm))
     Serial.println("setRF failed");
@@ -178,11 +178,11 @@ void loop()
     uint8_t len = sizeof(buf);
     if (nrf24.recv(buf, &len))
     {
-      Serial.print("receive:" + buf[8] + buf[9] + buf[10] + buf[11] + buf[12]);
+      Serial.println(String("receive:") + buf[0] + buf[1] + buf[2] + buf[3] + buf[4]);
       //      NRF24::printBuffer("request: ", buf, len);
       red = buf[0];
-      grn = buf[1];
-      blu = buf[2];
+      blu = buf[1];
+      yel = buf[2];
       duration = buf[3]; //refresh frequent
       interval = buf[4]; //refresh frequent
       fois = buf[5];
@@ -196,7 +196,7 @@ void loop()
       FFmount = buf[13];
       //上报自己是否正常程序，下面是检查是否收到 {14,13,12,11,10,9,8,7,6,5,4,3,2,1}，如果最后一个值是1，说明基站要求上报自己是否正常。下面是程序段，收到这个值就发送2。
 
-      if ((FFmount == 1) && (ArsMin == e) && (ArsHor == d) && (ComMin == c) && (ComHor == b) && (Asecond == a))
+      if (FFmount == 1)
       {
 
         //循环开始
@@ -288,10 +288,7 @@ void loop()
 
     
   }
- 
-
    rayon();
-
 }
  
 void rayon() {
