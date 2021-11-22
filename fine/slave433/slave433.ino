@@ -3,12 +3,7 @@
 
 #define RXD2        16  // Serial2 Receive pin
 #define TXD2        17  // Serial2 Transmit pin
- 
-//RS485 control
-#define SERIAL_COMMUNICATION_CONTROL_PIN 5 // Transmission set pin
-#define RS485_TX_PIN_VALUE HIGH
-#define RS485_RX_PIN_VALUE LOW
- 
+
 //SoftwareSerial RS485Serial(RXPin, TXPin); // RX, TX
 RH_NRF24 nrf24(2,4);//CE,CSN
 int byteSend;
@@ -16,9 +11,6 @@ bool isDataReceived = false;
 bool send0 = false;
 void setup()  {
   Serial.begin(9600);
- 
-  pinMode(SERIAL_COMMUNICATION_CONTROL_PIN, OUTPUT);
-  digitalWrite(SERIAL_COMMUNICATION_CONTROL_PIN, RS485_RX_PIN_VALUE);
   
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);   // set the data rate
  
@@ -42,8 +34,62 @@ void setup()  {
 int beginflag = 0;
 int h = 0;
 bool truestart = false;
+void sendSYN(uint8_t *data){
+	
+	
+	uint8_t SYN1[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],1} ;
+	uint8_t SYN2[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],2} ;
+	uint8_t SYN3[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],3} ;
+	uint8_t SYN4[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],4} ;
+	uint8_t SYN5[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],5} ;
+	uint8_t SYN6[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],6} ;
+	uint8_t SYN7[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],7} ;
+	uint8_t SYN8[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],8} ;
+	uint8_t SYN9[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],9} ;
+	uint8_t SYN10[14]={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],10} ;
+	
+	nrf24.send(SYN1, sizeof(SYN1));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN2, sizeof(SYN2));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN3, sizeof(SYN3));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN4, sizeof(SYN4));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN5, sizeof(SYN5));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN6, sizeof(SYN6));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN7, sizeof(SYN7));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN8, sizeof(SYN8));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN9, sizeof(SYN9));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN10, sizeof(SYN10));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+}
 void loop() {
-	digitalWrite(SERIAL_COMMUNICATION_CONTROL_PIN, RS485_RX_PIN_VALUE);  //  RS485 Read
 
 	byte buf[15];
 	uint8_t data[14];
@@ -77,14 +123,16 @@ void loop() {
  
     if(h >=14)
     {
+	  delay(2000);	
       Serial.println("send data to nrf24");
-      nrf24.send(data, 14); 
+	  sendSYN(data);
+      //nrf24.send(data, 14); 
       for (int i = 0; i < 14; i++)
       {
         Serial.print(data[i]);
         Serial.print(",");
       }
-      nrf24.waitPacketSent();
+      //nrf24.waitPacketSent();
       h  = 0; 
       beginflag = 0;
       truestart = false;

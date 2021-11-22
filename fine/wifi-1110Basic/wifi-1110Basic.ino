@@ -1,8 +1,7 @@
 #include <Arduino.h>
 
-  #include <WiFi.h>
-  #include <AsyncTCP.h>
-
+#include <WiFi.h>
+#include <AsyncTCP.h>
 
 #include <ESPAsyncWebServer.h>
 
@@ -85,7 +84,11 @@ void setup() {
 	Serial.println("setRF failed");
   // Connect to Wi-Fi network with SSID and password
 
-//read wifiname and password:
+  pinMode(SERIAL_COMMUNICATION_CONTROL_PIN, OUTPUT);
+  digitalWrite(SERIAL_COMMUNICATION_CONTROL_PIN, RS485_TX_PIN_VALUE);
+
+  Serial2.begin(9600);//, SERIAL_8N1, RXD2, TXD2);   // set the data rate
+  //read wifiname and password:
   File myFile;
 
   
@@ -200,7 +203,7 @@ void loop()
 			header += c;
 			String input1=header;
 			if (c == '\n') {                    // if the byte is a newline character
- 		      //192.168.12.1/o=y=200s=200e=  192.168.12.1/o=rybw=200s=   192.168.12.1/f= 192.168.12.1/o=reset  192.168.12.1/o=sleep  192.168.12.1/o=check
+ 		        //192.168.12.1/o=y=200s=200e=  192.168.12.1/o=rybw=200s=   192.168.12.1/f= 192.168.12.1/o=reset  192.168.12.1/o=sleep  192.168.12.1/o=check
 				if (currentLine.length() == 0) 
 				{
 
@@ -208,10 +211,10 @@ void loop()
 						red = yellow = blue = 0;
 						//开关时间 和 错灯间隔
 						for(int h=0;h<1;h++){
-							uint8_t data[14] ={red,yellow,blue,0,0,0,0,0,0,0,0,0,0,2} ;
-							nrf24.send(data, sizeof(data));
-							nrf24.waitPacketSent();
+							uint8_t data[14] = {red,yellow,blue,0,0,0,0,0,0,0,0,0,2,0} ;
 							sendDatato433(data);
+							delay(2000);
+							sendDatato2G4(data);
 						}
 					}
 					else if (header.indexOf("o=") > 0){ 
@@ -241,70 +244,86 @@ void loop()
 							Serial.println("w light.");
 							colorbegin = wbegin = header.indexOf("w=");
 							sbegin  = header.indexOf("s=");
-              if(header.indexOf("ryb") > 0)
-              {
-                red = 1;
-                yellow = 2;
-                blue = 3;   //固定红黄蓝顺序
-              }
-              if(header.indexOf("rby") > 0)
-              {
-                red = 1;
-                yellow = 3;
-                blue = 2;   //固定红黄蓝顺序
-              }
-              if(header.indexOf("bry") > 0)
-              {
-                red = 2;
-                yellow = 3;
-                blue = 1;   //固定红黄蓝顺序
-              }
-              if(header.indexOf("byr") > 0)
-              {
-                red = 3;
-                yellow = 2;
-                blue = 1;   //固定红黄蓝顺序
-              }
-              if(header.indexOf("ybr") > 0)
-              {
-                red = 3;
-                yellow = 1;
-                blue = 2;   //固定红黄蓝顺序
-              }
-              if(header.indexOf("yrb") > 0)
-              {
-                red = 2;
-                yellow = 1;
-                blue = 3;   //固定红黄蓝顺序
-              }
+							  if(header.indexOf("ryb") > 0)
+							  {
+								red = 1;
+								yellow = 2;
+								blue = 3;   //固定红黄蓝顺序
+							  }
+							  if(header.indexOf("rby") > 0)
+							  {
+								red = 1;
+								yellow = 3;
+								blue = 2;   //固定红黄蓝顺序
+							  }
+							  if(header.indexOf("bry") > 0)
+							  {
+								red = 2;
+								yellow = 3;
+								blue = 1;   //固定红黄蓝顺序
+							  }
+							  if(header.indexOf("byr") > 0)
+							  {
+								red = 3;
+								yellow = 2;
+								blue = 1;   //固定红黄蓝顺序
+							  }
+							  if(header.indexOf("ybr") > 0)
+							  {
+								red = 3;
+								yellow = 1;
+								blue = 2;   //固定红黄蓝顺序
+							  }
+							  if(header.indexOf("yrb") > 0)
+							  {
+								red = 2;
+								yellow = 1;
+								blue = 3;   //固定红黄蓝顺序
+							  }
+							  if(wbegin > 0 ){
+								String Trastime = header.substring(colorbegin+2, sbegin);
+								i_Tras = Trastime.toInt();
+								i_Ontime = i_Offtime = 0;
+								Serial.println(String("Trastime = ") + i_Tras);
+								Serial.println(String("wbegin = ") + wbegin);
+							}
+
+							for(int h=0;h<1;h++){
+								  uint8_t data[14] ={red,yellow,blue,0,0,i_Tras,0,0,0,0,0,0,3,0} ;//buf[13]=3是三色灯命令
+								  sendDatato433(data);
+								  delay(2000);
+								  sendDatato2G4(data);
+							}
+							break;
 						}
-						else{
+						else
+						{
 							Serial.println("the comand is reset or sleep or check."); 
 							if(header.indexOf("reset") >= 0){//重启
-                for(int h=0;h<1;h++){
-                  uint8_t data[14] ={0,0,0,0,0,0,0,0,0,0,0,0,0,8} ;//buf[13]=8是报警灯重启命令
-                  nrf24.send(data, sizeof(data));
-                  nrf24.waitPacketSent();
-                  sendDatato433(data);
-                }
-             }
-             if (header.indexOf("check") >= 0) {
-              for(int h=0;h<1;h++){
-                uint8_t data[14] ={0,0,0,0,0,0,0,0,0,0,0,0,0,1} ;//buf[13]=1是报警灯点名命令
-                nrf24.send(data, sizeof(data));
-                nrf24.waitPacketSent();
-                sendDatato433(data);
-              }
-          }
-            if (header.indexOf("sleep") >= 0) {
-              for(int h=0;h<1;h++){
-                uint8_t data[14] ={0,0,0,0,0,0,0,0,0,0,0,0,0,9} ;//buf[13]=9是报警灯休眠命令
-                nrf24.send(data, sizeof(data));
-                nrf24.waitPacketSent();
-                sendDatato433(data);
-              }
-              }
-              break;
+								for(int h=0;h<1;h++){
+								  uint8_t data[14] ={0,0,0,0,0,0,0,0,0,0,0,0,8,0} ;//buf[13]=8是报警灯重启命令
+								  sendDatato433(data);
+								  delay(2000);
+								  sendDatato2G4(data);
+								}
+						    }
+							 if (header.indexOf("check") >= 0) {
+							  for(int h=0;h<1;h++){
+								uint8_t data[14] ={0,0,0,0,0,0,0,0,0,0,0,0,1,0} ;//buf[13]=1是报警灯点名命令
+								sendDatato433(data);
+								delay(2000);
+								sendDatato2G4(data);
+							  }
+							}
+							if (header.indexOf("sleep") >= 0) {
+							  for(int h=0;h<1;h++){
+								uint8_t data[14] ={0,0,0,0,0,0,0,0,0,0,0,0,9,0} ;//buf[13]=9是报警灯休眠命令
+								sendDatato433(data);
+								delay(2000);
+								sendDatato2G4(data);
+							  }
+							}
+							break;
 						}
 						if(colorbegin  > 0 ){
 							String Ontime = header.substring(colorbegin+2, sbegin);
@@ -313,27 +332,19 @@ void loop()
 							i_Offtime = Offtime.toInt();
 							Serial.println(String("ontime = ") + i_Ontime + String(",offtime = ") + i_Offtime );
 						}
-						if(wbegin > 0 ){
-							String Trastime = header.substring(colorbegin+2, sbegin);
-							i_Tras = Trastime.toInt();
-							i_Ontime = i_Offtime = 0;
-							Serial.println(String("Trastime = ") + i_Tras);
-							Serial.println(String("wbegin = ") + wbegin);
-						}
-						//开关时间 和 错灯间隔
 						for(int h=0;h<1;h++){
-							uint8_t data[14] ={red,yellow,blue,i_Ontime/10,i_Offtime/10,i_Tras/10,0,0,0,0,0,0,0,2} ;
-							nrf24.send(data, sizeof(data));
-							nrf24.waitPacketSent();
-							sendDatato433(data);
+							  uint8_t data[14] ={red,yellow,blue,i_Ontime/10,i_Offtime/10,0,0,0,0,0,0,0,2,0} ;//buf[13]=2是单色灯命令
+							  sendDatato433(data);
+							  delay(2000);
+							  sendDatato2G4(data);
 						}
 					}
 					else { //选择3
 						Serial.println("no command can handle error");
 					}//选择3
             
-          // Break out of the while loop
-          break;
+					  // Break out of the while loop
+					  break;
 				} 
 				else 
 				  
@@ -360,7 +371,66 @@ void loop()
  
 
 }
-
+void sendSYN(uint8_t *data){
+	
+	
+	uint8_t SYN1[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],1} ;
+	uint8_t SYN2[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],2} ;
+	uint8_t SYN3[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],3} ;
+	uint8_t SYN4[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],4} ;
+	uint8_t SYN5[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],5} ;
+	uint8_t SYN6[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],6} ;
+	uint8_t SYN7[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],7} ;
+	uint8_t SYN8[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],8} ;
+	uint8_t SYN9[14] ={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],9} ;
+	uint8_t SYN10[14]={data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],10} ;
+	
+	nrf24.send(SYN1, sizeof(SYN1));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN2, sizeof(SYN2));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN3, sizeof(SYN3));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN4, sizeof(SYN4));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN5, sizeof(SYN5));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN6, sizeof(SYN6));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN7, sizeof(SYN7));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN8, sizeof(SYN8));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN9, sizeof(SYN9));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+	nrf24.send(SYN10, sizeof(SYN10));
+	nrf24.waitPacketSent();
+	delay(10);
+	
+}
+void sendDatato2G4(uint8_t *data){
+	sendSYN(data);
+	//nrf24.send(data, sizeof(data));
+	//nrf24.waitPacketSent();
+}
 void sendDatato433(uint8_t *data){
 	Serial2.write(0x99); // Send message
 	Serial2.write(0x88); // Send message
@@ -370,8 +440,7 @@ void sendDatato433(uint8_t *data){
 	for(int h=0;h<14;h++)
 	{
 		Serial2.write(data[h]); // Send message
-    Serial.println(data[h]);
-		//delay(10);	
+		Serial.println(data[h]);	
 	}
 
 }
