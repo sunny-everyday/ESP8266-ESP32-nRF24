@@ -141,7 +141,7 @@ void loop()
     uint8_t len = sizeof(buf);
     if (nrf24.recv(buf, &len))
     {
-      Serial.println(String("receive:") + buf[0] + buf[1] + buf[2] + buf[3]+ String("，") + buf[4] + String("，")+ buf[5]+ String("，")+ buf[12]+ buf[13]);
+      Serial.println(String("receive:") + buf[0] + buf[1] + buf[2] + buf[3]+ String("，") + buf[4] + String("，")+ buf[5]+ String("，")+ buf[12]+ String("，")+ buf[13]);
       //      NRF24::printBuffer("request: ", buf, len);
       red = buf[0];
       yel = buf[1];
@@ -181,19 +181,19 @@ void loop()
 			switch(lastsynInfo)
 			{
 				case 6:
-					delay(50);
+					delay(500);
 					break;
 				case 7:
-					delay(40);
+					delay(400);
 					break;
 				case 8:
-					delay(30);
+					delay(300);
 					break;
 				case 9:
-					delay(20);
+					delay(200);
 					break;
 				case 10:
-					delay(10);
+					delay(100);
 					break;
 			}
 			if(receivetureinfo)
@@ -231,6 +231,8 @@ void loop()
 				{firstL = 2;secondL =0;thirdL=0;Serial.println("yell");}
 			  if(blu == 1)
 				{firstL = 4;secondL =0;thirdL=0;Serial.println("blue");}
+			  if(red == 0 && yel == 0 && blu == 0)
+				{firstL = 0;secondL =0;thirdL=0;Serial.println("offLight");} 
 			}
 			  if (FFmount == 1)  //check
 			  {
@@ -304,6 +306,8 @@ void TurnFirstL()
     TurnYell();
   if(firstL == 4)
     TurnBlue();
+
+	  
  }
 void TurnSecondL()
 {
@@ -328,21 +332,21 @@ void TurnThirdL()
 }
 void TurnRed()
 {
-  Serial.println("red");
+  //Serial.println("red");
   A2 = 0; A1=0;
   digitalWrite(A2OUT, A2);
   digitalWrite(A1OUT, A1);
 }//红灯
 void TurnYell()
 {
-  Serial.println("yel");
+  //Serial.println("yel");
   A2 = 1; A1=1;
   digitalWrite(A2OUT, A2);
   digitalWrite(A1OUT, A1);
 }//黄灯
 void TurnBlue()
 {
-  Serial.println("blue");
+  //Serial.println("blue");
   A2 = 0; A1=1;
   digitalWrite(A2OUT, A2);
   digitalWrite(A1OUT, A1);
@@ -380,6 +384,8 @@ void rayon() {
         TurnYell();
       if(firstL == 4)
         TurnBlue();
+	  if(firstL == 0)
+		offLight();
   	 
   	if ((millis() - t) >= (10 * duration)) {
   		  state = 0;
