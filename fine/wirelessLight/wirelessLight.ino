@@ -66,6 +66,25 @@ void setup()
   pinMode(rouge, OUTPUT);
   pinMode(verde, OUTPUT);
   pinMode(azure, OUTPUT);
+
+  Serial.println("red");
+  digitalWrite(rouge, 1);
+  digitalWrite(verde, 0);
+  digitalWrite(azure, 0);
+  delay(2000);
+
+  Serial.println("yell");
+  digitalWrite(rouge, 0);
+  digitalWrite(verde, 1);
+  digitalWrite(azure, 0);
+  delay(2000);
+  
+  Serial.println("blue");
+  digitalWrite(rouge, 0);
+  digitalWrite(verde, 0);
+  digitalWrite(azure, 1);
+  delay(2000);
+  
   if (!nrf24.init())
     Serial.println("init failed");
   // Defaults after init are 2.402 GHz (channel 2), 2Mbps, 0dBm
