@@ -41,7 +41,7 @@ int Ahour;
 int Aminute;
 int Asecond;
 int bufA = -2;
-int FFmount;
+int FFmount;//命令码
 int SynNum = 0;
 int bian;
 int sleepH;
@@ -141,67 +141,58 @@ void loop()
     uint8_t len = sizeof(buf);
     if (nrf24.recv(buf, &len))
     {
-      Serial.println(String("receive:") + buf[0] + buf[1] + buf[2] + buf[3]+ String(",") + buf[4] + String(",")+ buf[5]+ String(",")+ buf[12]+ String(",")+ buf[13]);
+      Serial.println(String("receive:") + buf[0] + buf[1] + buf[2] + buf[3]+ buf[4] +  buf[5]+  buf[6] + buf[7] + buf[13]);
       //      NRF24::printBuffer("request: ", buf, len);
       red = buf[0];
       yel = buf[1];
       blu = buf[2];
       duration = buf[3]; //refresh frequent
       interval = buf[4]; //refresh frequent
-      fois = buf[5];
-      sleepH = buf[11];
-      FFmount = buf[12];
+      fois = buf[5];   //周期
+      sleepH = buf[6];
+	  
+	  if(buf[7] == 2 || buf[8] == 2 || buf[9] == 2 || buf[10] == 2||  buf[11] == 2 || buf[12] == 2)
+	  {FFmount = 2;}  
+      
+	  if(buf[7] == 1 || buf[8] == 1 || buf[9] == 1 || buf[10] == 1||  buf[11] == 1 || buf[12] == 1)
+	  {FFmount = 1;} 
+  
+	  if(buf[7] == 9 || buf[8] == 9 || buf[9] == 9 || buf[10] == 9||  buf[11] == 9 || buf[12] == 9)
+	  {FFmount = 9;} 
+  
+  	  if(buf[7] == 8 || buf[8] == 8 || buf[9] == 8 || buf[10] == 8||  buf[11] == 8 || buf[12] == 8)
+	  {FFmount = 8;} 
+  
 	  SynNum = buf[13];
       //上报自己是否正常程序，下面是检查是否收到 {14,13,12,11,10,9,8,7,6,5,4,3,2,1}，如果最后一个值是1，说明基站要求上报自己是否正常。下面是程序段，收到这个值就发送2。
-
+	  //非雾区没有三色灯
 			
-			
-
-	
-			  if (FFmount == 3)  //三色灯
-			  {
-					Serial.println("receive W light  now");
-					if(red == 1 && yel == 2 && blu == 3)
-						{firstL = 1;secondL = 2;thirdL=4;}
-					else if (red == 1 && yel == 3 && blu == 2)
-						{firstL = 1;secondL = 4;thirdL=2;}
-					else if (yel == 1 && red == 2 && blu == 3)
-						{firstL = 2;secondL = 1;thirdL=4;}
-					else if (yel == 1 && red == 3 && blu == 2)
-					  {firstL = 2;secondL = 4;thirdL=1;}
-					else if (blu == 1 && yel == 2 && red == 3)
-						{firstL = 4;secondL = 2;thirdL=1;}
-					else if (blu == 1 && yel == 3 && red == 2)
-						{firstL = 4;secondL = 1;thirdL=2;}
-					else
-						{firstL = 0;secondL =0;thirdL=0;}
-					Serial.println(firstL);
-					Serial.println(secondL);
-					Serial.println(thirdL);
-			  
-			  }
-			//if (FFmount == 2)  //单色灯
+		if (FFmount == 2)  //单色灯
+		{
+		  if(red == 1)
+			{firstL = 1;secondL =0;thirdL=0;Serial.println("red");TurnRed();}
+		  if(yel == 1)
+			{firstL = 2;secondL =0;thirdL=0;Serial.println("yell");TurnYell();}
+		  if(blu == 1)
+			{firstL = 4;secondL =0;thirdL=0;Serial.println("blue");TurnBlue();}
+		  if(red == 0 && yel == 0 && blu == 0)
+			{firstL = 0;secondL =0;thirdL=0;Serial.println("offLight");offLight() ;} 
+		}
+		if (FFmount == 1)  //check
+		{
+			if(red ==a &&  yel == b && blu == c && duration == d && interval == e)
 			{
-			  if(red == 1)
-				{firstL = 1;secondL =0;thirdL=0;Serial.println("red");TurnRed();}
-			  if(yel == 1)
-				{firstL = 2;secondL =0;thirdL=0;Serial.println("yell");TurnYell();}
-			  if(blu == 1)
-				{firstL = 4;secondL =0;thirdL=0;Serial.println("blue");TurnBlue();}
-			  if(red == 0 && yel == 0 && blu == 0)
-				{firstL = 0;secondL =0;thirdL=0;Serial.println("offLight");offLight() ;} 
-			}
-			  if (FFmount == 1)  //check
-			  {
 				//循环开始
-				for (int h = 0; h < 5; h++)
+				for (int h = 0; h < 2; h++)
 				{
+
 				  data1[0] = a;
 				  data1[1] = b;
 				  data1[2] = c;
 				  data1[3] = d;
 				  data1[4] = e;
-				  data1[13] = 2;
+				  
+				  data1[5] = data1[6] = data1[7] = data1[8] = data1[9] = data1[10] = data1[11] = data1[12] = 5;
 				  nrf24.send(data1, sizeof(data1));
 				  nrf24.waitPacketSent();
 				  delay(200);
@@ -217,33 +208,29 @@ void loop()
 				//循环结束
 				Serial.println(" OK!");
 				FFmount = 0;
-				buf[13] = 0;
-			  }
-			  
-				if (FFmount == 9) //休眠。。。
-				{
-				  Serial.println("Setup ESP32 to sleep for every " + String(TIME_TO_SLEEP) + " Seconds");
-				  Serial.println("Going to sleep now");
-				  delay(1000);
-				  ESP.deepSleep(60e6 * 60 * sleepH);  //1s * 60 * H
-				  Serial.flush();
-		  
-				  Serial.println("This will never be printed");
-				  // delay(e*(duration+interval));
-				  // Serial.println("休眠 OK...");
-				} //end 休眠
 
-			  if (FFmount == 8) //重启。。。
-			  {
-				Serial.println("Restarting in 2 seconds");
-				delay(2000);
-				ESP.restart();
-			  } //end 重启结束
-			
-			 
-		 
-    
-	  
+			}
+		}
+			  
+		if (FFmount == 9) //休眠。。。
+		{
+		  Serial.println("Setup ESP32 to sleep for every " + String(TIME_TO_SLEEP) + " Seconds");
+		  Serial.println("Going to sleep now");
+		  delay(1000);
+		  ESP.deepSleep(60e6 * 60 * sleepH);  //1s * 60 * H
+		  Serial.flush();
+
+		  Serial.println("This will never be printed");
+		  // delay(e*(duration+interval));
+		  // Serial.println("休眠 OK...");
+		} //end 休眠
+
+		if (FFmount == 8) //重启。。。
+		{
+			Serial.println("Restarting in 2 seconds");
+			delay(2000);
+			ESP.restart();
+		} //end 重启结束
 
   	}
   	else
@@ -252,41 +239,9 @@ void loop()
   	}
 
   }
-   //rayon();
-}
-void TurnFirstL()
-{
-  Serial.println(firstL);
-  if(firstL == 1)
-    TurnRed();
-  if(firstL == 2)
-    TurnYell();
-  if(firstL == 4)
-    TurnBlue();
-
-	  
- }
-void TurnSecondL()
-{
-  Serial.println(secondL);
-  if(secondL == 1)
-    TurnRed();
-  if(secondL == 2)
-    TurnYell();
-  if(secondL == 4)
-    TurnBlue();
-}
-void TurnThirdL()
-{
-  Serial.println(thirdL);
-  if(thirdL == 1)
-    TurnRed();
-  if(thirdL == 2)
-    TurnYell();
-  if(thirdL == 4)
-    TurnBlue();
 
 }
+
 void TurnRed()
 {
   //Serial.println("red");
@@ -309,52 +264,8 @@ void TurnBlue()
   digitalWrite(A1OUT, A1);
 }//蓝灯
 void offLight() //灭灯
-{A2 = 1; A1=0;
+{
+  A2 = 1; A1=0;
   digitalWrite(A2OUT, A2);
   digitalWrite(A1OUT, A1);
-}
-void rayon() {
-
-  if(secondL != 0 && thirdL != 0)
-  {
-    //Serial.println("w light");
-
-    TurnFirstL();
-    //Serial.println("TurnFirstL");
-    delay(fois);
-
-    TurnSecondL();
-    //Serial.println("TurnSecondL");
-    delay(fois);
-
-    TurnThirdL();
-    //Serial.println("TurnThirdL");
-    delay(fois);
-  }
-  else
-    {
-      //Serial.println("Single light");
-  	if (state == 1) {
-      if(firstL == 1)
-        TurnRed();
-      if(firstL == 2)
-        TurnYell();
-      if(firstL == 4)
-        TurnBlue();
-	  if(firstL == 0)
-		offLight();
-  	 
-  	if ((millis() - t) >= (10 * duration)) {
-  		  state = 0;
-  		  t = millis();
-  		}
-  	}
-  	if (state == 0) {
-      offLight();
-  	  if ((millis() - t) >= (10 * interval)) {
-  		  state = 1;
-  		  t = millis();
-  		}
-  	}
-    }
 }
